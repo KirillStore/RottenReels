@@ -11,24 +11,34 @@ import (
 // GetAllMovies retrieves all movies with their average rating.
 func GetAllMovies(c *gin.Context) {
 	var movies []models.Movie
-	result := db.DB.Preload("Reviews").Find(&movies)
+	result := db.DB.Find(&movies)
 	if result.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
 		return
 	}
 
-	// Calculate average rating
 	for i, movie := range movies {
-		var totalRating int
-		for _, review := range movie.Reviews {
-			totalRating += review.Rating
+		var totalRating float64
+		var countRating int
+		var ratings []models.Rating
+
+		resultRating := db.DB.Where("movie_id = ?", movie.ID).Find(&ratings)
+		if resultRating.Error != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": resultRating.Error.Error()})
+			return
 		}
-		if len(movie.Reviews) > 0 {
-			movies[i].AverageRating = float64(totalRating) / float64(len(movie.Reviews))
+		for _, rating := range ratings {
+			totalRating += rating.Score
+			countRating++
+		}
+		if countRating > 0 {
+			movies[i].AverageRating = totalRating / float64(countRating)
+		} else {
+			movies[i].AverageRating = 0
 		}
 	}
+	c.JSON(http.StatusOK, gin.H{"movies": movies})
 
-	c.JSON(http.StatusOK, movies)
 }
 
 // GetMovieById retrieves a movie by its ID.

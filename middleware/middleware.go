@@ -31,3 +31,26 @@ func JWTAuthMiddleware() gin.HandlerFunc {
 		c.Next()
 	}
 }
+
+func AdminMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		claims, exists := c.Get("user")
+		if !exists {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+			c.Abort()
+			return
+		}
+		userClaims, ok := claims.(*utils.Claims)
+		if !ok {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "User does not contain an access token"})
+			c.Abort()
+			return
+		}
+		if userClaims.Role != "admin" {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "User is not an admin"})
+			c.Abort()
+			return
+		}
+		c.Next()
+	}
+}

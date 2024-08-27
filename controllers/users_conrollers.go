@@ -43,6 +43,10 @@ func CreateUser(c *gin.Context) {
 		c.JSON(400, gin.H{"message": "Username and Password can't be empty"})
 	}
 
+	if user.Role == "" {
+		user.Role = "employee"
+	}
+
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	if err != nil {
 		c.JSON(500, gin.H{"error": "failed to hash password"})
@@ -86,7 +90,7 @@ func LoginUser(c *gin.Context) {
 		return
 	}
 
-	token, err := utils.GenerateJWT(user.Username)
+	token, err := utils.GenerateJWT(user.Username, int(user.ID), user.Role)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
 		return
