@@ -6,12 +6,13 @@ import (
 	"net/http"
 	"test_go/db"
 	"test_go/models"
+	"test_go/utils"
 )
 
 // GetAllMovies retrieves all movies with their average rating.
 func GetAllMovies(c *gin.Context) {
 	var movies []models.Movie
-	result := db.DB.Find(&movies)
+	result := db.DB.Preload("Ratings").Find(&movies)
 	if result.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
 		return
@@ -66,6 +67,15 @@ func CreateMovie(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+
+	claims, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+
+	userClaims := claims.(*utils.Claims)
+	movie.UserID = uint(userClaims.UserID) // Явное преобразование в uint, если требуется
 
 	result := db.DB.Create(&movie)
 	if result.Error != nil {

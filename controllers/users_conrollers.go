@@ -12,39 +12,50 @@ import (
 
 func GetAllUsers(c *gin.Context) {
 	var users []models.User
-	result := db.DB.Find(&users)
+	// Предзагрузка роли для каждого пользователя
+	result := db.DB.Preload("Role").Find(&users)
 	if result.Error != nil {
-		c.JSON(500, gin.H{"message": result.Error.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"message": result.Error.Error()})
+		return
 	}
-	c.JSON(200, users)
+	c.JSON(http.StatusOK, users)
 }
+
 func GetUserById(c *gin.Context) {
 	var user models.User
 	id := c.Param("id")
-	result := db.DB.First(&user, id)
+	// Предзагрузка роли пользователя
+	result := db.DB.Preload("Role").First(&user, id)
 	if result.Error != nil {
 		if result.Error == gorm.ErrRecordNotFound {
-			c.JSON(404, gin.H{"message": "User not found"})
+			c.JSON(http.StatusNotFound, gin.H{"message": "User not found"})
 		} else {
-			c.JSON(500, gin.H{"message": "Something went wrong"})
+			c.JSON(http.StatusInternalServerError, gin.H{"message": "Something went wrong"})
 		}
 		return
 	}
-	c.JSON(200, user)
+	c.JSON(http.StatusOK, user)
 }
 
 func CreateUser(c *gin.Context) {
 	var user models.User
 	if err := c.ShouldBindJSON(&user); err != nil {
-		c.JSON(400, gin.H{"message": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
+
 	if user.Username == "" || user.Password == "" {
-		c.JSON(400, gin.H{"message": "Username and Password can't be empty"})
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Username and Password can't be empty"})
+		return
 	}
 
-	if user.Role == "" {
-		user.Role = "employee"
+	if user.RoleID == 0 {
+		var defaultRole models.Role
+		if err := db.DB.Where("name = ?", "employee").First(&defaultRole).Error; err != nil {
+			c.JSON(500, gin.H{"error": "Failed to find default role"})
+			return
+		}
+		user.RoleID = defaultRole.ID
 	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
@@ -58,8 +69,18 @@ func CreateUser(c *gin.Context) {
 	result := db.DB.Create(&user)
 	if result.Error != nil {
 		c.JSON(500, gin.H{"message": result.Error.Error()})
+		return
 	}
-	c.JSON(201, user)
+
+	response := struct {
+		ID       uint   `json:"id"`
+		Username string `json:"username"`
+	}{
+		ID:       user.ID,
+		Username: user.Username,
+	}
+
+	c.JSON(201, response)
 }
 
 func LoginUser(c *gin.Context) {
@@ -74,7 +95,7 @@ func LoginUser(c *gin.Context) {
 	}
 
 	var user models.User
-	result := db.DB.Where("username = ?", loginData.Username).First(&user)
+	result := db.DB.Where("username = ?", loginData.Username).Preload("Role").First(&user)
 	if result.Error != nil {
 		if result.Error == gorm.ErrRecordNotFound {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid username"})
@@ -90,7 +111,8 @@ func LoginUser(c *gin.Context) {
 		return
 	}
 
-	token, err := utils.GenerateJWT(user.Username, int(user.ID), user.Role)
+	// Генерация токена с учетом роли пользователя
+	token, err := utils.GenerateJWT(user.Username, int(user.ID), user.Role.Name)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
 		return

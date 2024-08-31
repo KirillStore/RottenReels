@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 	"log"
 	"net/http"
 	"strconv"
@@ -32,7 +33,7 @@ func CreateRating(c *gin.Context) {
 		return
 	}
 	userClaims := claims.(*utils.Claims)
-	rating.UserID = int(userClaims.UserID)
+	rating.UserID = uint(userClaims.UserID)
 	log.Println("UserID from token:", rating.UserID)
 
 	// Получение ID фильма из URL
@@ -48,10 +49,30 @@ func CreateRating(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	rating.MovieID = movieIDint
+	rating.MovieID = uint(movieIDint)
 	log.Println("MovieID:", rating.MovieID)
 
-	// Сохранение рейтинга в базе данных
+	// Попытка найти существующий рейтинг
+	var existingRating models.Rating
+	if err := db.DB.Where("user_id = ? AND movie_id = ?", rating.UserID, rating.MovieID).First(&existingRating).Error; err == nil {
+		// Рейтинг существует, обновляем его
+		existingRating.Score = rating.Score
+		if err := db.DB.Save(&existingRating).Error; err != nil {
+			log.Println("Error saving rating:", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		log.Println("Rating updated", existingRating)
+		c.JSON(http.StatusOK, gin.H{"message": "Rating updated successfully", "rating": existingRating})
+		return
+	} else if err != gorm.ErrRecordNotFound {
+		log.Println("Error getting rating:", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Сохранение нового рейтинга в базе данных
+	rating.ID = 0 // Обнуляем ID, чтобы он генерировался автоматически
 	if err := db.DB.Create(&rating).Error; err != nil {
 		log.Println("Error during creation in DB:", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
