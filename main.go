@@ -15,6 +15,7 @@ func main() {
 	cfg, err := config.LoadConfig()
 	if err != nil {
 		log.Fatal(err)
+
 	}
 	log.Printf("Config loaded")
 
@@ -34,10 +35,9 @@ func main() {
 	{
 		authMoviesGroup.POST("", controllers.CreateMovie)
 		authMoviesGroup.POST("/:id/reviews", controllers.CreateReview)
-		//authMoviesGroup.GET("/:id/reviews", controllers.GetReviewsByMovieId)
 		authMoviesGroup.POST("/:id/ratings", controllers.CreateRating)
-		//authMoviesGroup.DELETE("/:id/", middleware.AdminMiddleware(), controllers.DeleteMovie)
-		//authMoviesGroup.PUT("/:id/", middleware.AdminMiddleware(), controllers.UpdateMovie)
+		authMoviesGroup.DELETE("/:id/", middleware.AdminMiddleware(), controllers.DeleteMovie)
+		authMoviesGroup.PUT("/:id/", middleware.AdminMiddleware(), controllers.UpdateMovie)
 		//authMoviesGroup.DELETE("/:id/reviews", middleware.AdminMiddleware(), controllers.DeleteReview)
 
 	}
@@ -49,7 +49,7 @@ func main() {
 	{
 		authUsersGroup.GET("", controllers.GetAllUsers)
 		authUsersGroup.GET("/:id", controllers.GetUserById)
-		//authUsersGroup.DELETE("/:id", middleware.AdminMiddleware() controllers.DeleteUser)
+		authUsersGroup.DELETE("/:id", middleware.AdminMiddleware(), controllers.DeleteUser)
 		//authUsersGroup.PUT("/:id", middleware.AdminMiddleware(), controllers.UpdateUser) //в т.ч. смена роли юзера
 
 	}

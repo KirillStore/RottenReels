@@ -85,3 +85,35 @@ func CreateMovie(c *gin.Context) {
 
 	c.JSON(http.StatusCreated, movie)
 }
+
+func DeleteMovie(c *gin.Context) {
+	id := c.Param("id")
+	var movie models.Movie
+	if err := db.DB.First(&movie, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Movie not found"})
+		return
+	}
+	if err := db.DB.Delete(&movie).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to delete movie"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"movie": "Movie deleted successfully"})
+}
+
+func UpdateMovie(c *gin.Context) {
+	id := c.Param("id")
+	var movie models.Movie
+	if err := db.DB.First(&movie, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Movie not found"})
+		return
+	}
+	if err := c.ShouldBindJSON(&movie); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if err := db.DB.Save(&movie).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update movie"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"movie": "Movie updated successfully"})
+}

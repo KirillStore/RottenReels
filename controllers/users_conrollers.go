@@ -120,3 +120,35 @@ func LoginUser(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"token": token})
 }
+
+func DeleteUser(c *gin.Context) {
+	var user models.User
+	id := c.Param("id")
+	if err := db.DB.First(&user, id).Preload("Role").First(&user).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"message": "User not found"})
+		return
+	}
+	if err := db.DB.Delete(&user).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Something went wrong"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "User deleted"})
+}
+
+func UpdateUser(c *gin.Context) {
+	id := c.Param("id")
+	var user models.User
+	if err := db.DB.First(&user, id).Preload("Role").First(&user).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"message": "User not found"})
+		return
+	}
+	if err := c.ShouldBindJSON(&user); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+		return
+	}
+	if err := db.DB.Save(&user).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Something went wrong"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "User updated", "user": user})
+}
