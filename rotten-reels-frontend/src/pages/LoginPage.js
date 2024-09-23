@@ -19,18 +19,37 @@ const LoginPage = ({ setUser }) => {
             });
 
             if (response.ok) {
+                // Получаем токен из ответа
                 const { token } = await response.json();
+
+                // Логируем токен для отладки
+                console.log("Получен токен:", token);
+
+                // Сохраняем токен в localStorage
                 localStorage.setItem('token', token);
 
+                // Парсим payload токена (вторая часть JWT)
+                const base64Url = token.split('.')[1];
+                const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+                }).join(''));
 
-                const userInfo = JSON.parse(atob(token.split('.')[1]));
+                const userInfo = JSON.parse(jsonPayload);
+
+                // Логируем userInfo для отладки
+                console.log("Декодированная информация о пользователе:", userInfo);
+
+                // Обновляем состояние пользователя
                 setUser(userInfo);
 
-                navigate('/');
+                // Перенаправляем на главную страницу
+                navigate('/movies');
             } else {
                 setError('Invalid credentials');
             }
         } catch (error) {
+            console.error("Ошибка при логине:", error);
             setError('An error occurred during login.');
         }
     };

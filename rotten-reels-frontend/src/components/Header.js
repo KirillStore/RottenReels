@@ -7,7 +7,6 @@ const Header = ({ user }) => {
 
     const handleLogout = () => {
         localStorage.removeItem("token");
-        localStorage.removeItem("user");
         navigate("/login");
     };
 
@@ -15,32 +14,27 @@ const Header = ({ user }) => {
         <AppBar position="static">
             <Toolbar>
                 <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-                    RottenReels
+                    Movie App
                 </Typography>
                 <Button color="inherit" component={Link} to="/movies">
                     Movies
                 </Button>
                 <Button color="inherit" component={Link} to="/users">
-                    Users(в работе)
+                    Users
                 </Button>
                 {user ? (
                     <>
                         <Typography variant="body1" component="div">
-                            Logged in as: {user}
+                            Logged in as: {user.username}
                         </Typography>
                         <Button color="inherit" onClick={handleLogout}>
                             Logout
                         </Button>
                     </>
                 ) : (
-                    <>
-                        <Button color="inherit" component={Link} to="/login">
-                            Login
-                        </Button>
-                        <Button color="inherit" component={Link} to="/register">
-                            Register {/* Кнопка регистрации */}
-                        </Button>
-                    </>
+                    <Button color="inherit" component={Link} to="/login">
+                        Login
+                    </Button>
                 )}
             </Toolbar>
         </AppBar>
