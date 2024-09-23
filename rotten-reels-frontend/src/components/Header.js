@@ -15,13 +15,13 @@ const Header = ({ user }) => {
         <AppBar position="static">
             <Toolbar>
                 <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-                    Movie App
+                    RottenReels
                 </Typography>
                 <Button color="inherit" component={Link} to="/movies">
                     Movies
                 </Button>
                 <Button color="inherit" component={Link} to="/users">
-                    Users
+                    Users(в работе)
                 </Button>
                 {user ? (
                     <>

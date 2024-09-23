@@ -22,11 +22,11 @@ const LoginPage = ({ setUser }) => {
                 const { token } = await response.json();
                 localStorage.setItem('token', token);
 
-                // Декодируем JWT и обновляем пользователя
+
                 const userInfo = JSON.parse(atob(token.split('.')[1]));
                 setUser(userInfo);
 
-                navigate('/movies');
+                navigate('/');
             } else {
                 setError('Invalid credentials');
             }
