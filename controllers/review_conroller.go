@@ -7,7 +7,6 @@ import (
 	"test_go/models"
 )
 
-// CreateReview allows an authorized user to leave a review.
 func CreateReview(c *gin.Context) {
 	var review models.Review
 
@@ -23,4 +22,18 @@ func CreateReview(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, review)
+}
+
+func DeleteReview(c *gin.Context) {
+	id := c.Param("id")
+	var review models.Review
+	if err := db.DB.Where(review, id).First(&review).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+	if err := db.DB.Delete(&review).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(200, gin.H{"message": "review deleted"})
 }

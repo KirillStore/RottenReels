@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"log"
 	"test_go/config"
@@ -11,6 +12,14 @@ import (
 
 func main() {
 	r := gin.Default()
+
+	r.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"http://localhost:3000"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE"},
+		AllowHeaders:     []string{"Origin", "Content-Length", "Content-Type", "authorization"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+	}))
 
 	cfg, err := config.LoadConfig()
 	if err != nil {
@@ -38,7 +47,7 @@ func main() {
 		authMoviesGroup.POST("/:id/ratings", controllers.CreateRating)
 		authMoviesGroup.DELETE("/:id/", middleware.AdminMiddleware(), controllers.DeleteMovie)
 		authMoviesGroup.PUT("/:id/", middleware.AdminMiddleware(), controllers.UpdateMovie)
-		//authMoviesGroup.DELETE("/:id/reviews", middleware.AdminMiddleware(), controllers.DeleteReview)
+		authMoviesGroup.DELETE("/:id/reviews", middleware.AdminMiddleware(), controllers.DeleteReview)
 
 	}
 
@@ -50,7 +59,7 @@ func main() {
 		authUsersGroup.GET("", controllers.GetAllUsers)
 		authUsersGroup.GET("/:id", controllers.GetUserById)
 		authUsersGroup.DELETE("/:id", middleware.AdminMiddleware(), controllers.DeleteUser)
-		//authUsersGroup.PUT("/:id", middleware.AdminMiddleware(), controllers.UpdateUser) //в т.ч. смена роли юзера
+		authUsersGroup.PUT("/:id", middleware.AdminMiddleware(), controllers.UpdateUser) //в т.ч. смена роли юзера
 
 	}
 

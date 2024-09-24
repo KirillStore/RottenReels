@@ -46,7 +46,9 @@ func GetAllMovies(c *gin.Context) {
 func GetMovieById(c *gin.Context) {
 	id := c.Param("id")
 	var movie models.Movie
-	result := db.DB.Preload("Reviews").First(&movie, "id = ?", id)
+
+	// Загружаем фильм вместе с отзывами и пользователями
+	result := db.DB.Preload("Reviews.User").First(&movie, "id = ?", id)
 	if result.Error != nil {
 		if result.Error == gorm.ErrRecordNotFound {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Movie not found"})
@@ -56,7 +58,11 @@ func GetMovieById(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, movie)
+	// Отправляем данные о фильме вместе с отзывами
+	c.JSON(http.StatusOK, gin.H{
+		"movie":   movie,
+		"reviews": movie.Reviews, // Отправляем отзывы как часть ответа
+	})
 }
 
 // CreateMovie creates a new movie.

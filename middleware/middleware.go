@@ -16,10 +16,12 @@ func JWTAuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		if strings.HasPrefix(tokenString, "Bearer") {
-			tokenString = strings.TrimPrefix(tokenString, "Bearer")
+		// Проверяем и удаляем префикс Bearer
+		if strings.HasPrefix(tokenString, "Bearer ") {
+			tokenString = strings.TrimPrefix(tokenString, "Bearer ")
 		}
 
+		// Валидируем токен
 		claims, err := utils.ValidateToken(tokenString)
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
@@ -27,6 +29,7 @@ func JWTAuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
+		// Сохраняем информацию о пользователе в контексте
 		c.Set("user", claims)
 		c.Next()
 	}
