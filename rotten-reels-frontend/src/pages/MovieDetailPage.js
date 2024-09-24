@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 
-const MovieDetailPage = ({ user }) => {
+const MovieDetailPage = () => {
     const { id } = useParams();
     const [movie, setMovie] = useState(null);
+    const [reviews, setReviews] = useState([]);
     const [rating, setRating] = useState(0);
     const [review, setReview] = useState('');
     const [error, setError] = useState(null);
@@ -21,7 +22,8 @@ const MovieDetailPage = ({ user }) => {
 
                 if (response.ok) {
                     const data = await response.json();
-                    setMovie(data); // Исправление: предполагаем, что данные фильма находятся прямо в ответе
+                    setMovie(data.movie);  // Данные о фильме
+                    setReviews(data.reviews);  // Данные о ревью
                 } else {
                     setError("Failed to load movie.");
                 }
@@ -69,22 +71,21 @@ const MovieDetailPage = ({ user }) => {
                     'Authorization': `Bearer ${token}`,
                 },
                 body: JSON.stringify({
-                    text: review,
-                    user_id: Number(user.user_id), // Преобразуем user_id в число, если нужно
-                    movie_id: Number(id),          // Преобразуем id фильма в число
+                    comment: review,  // Используем comment
+                    rating: rating,   // Оценка
                 }),
             });
 
             if (response.ok) {
                 setMessage('Review submitted successfully.');
-                setReview(''); // Очищаем поле отзыва после успешной отправки
+                setReview('');  // Очищаем поле отзыва после успешной отправки
             } else {
-                const errorData = await response.json(); // Логируем ошибку от сервера
+                const errorData = await response.json();  // Логируем ошибку от сервера
                 console.error('Error from server:', errorData);
                 setError('Failed to submit review.');
             }
         } catch (error) {
-            console.error('Error during fetch:', error); // Логируем ошибку сети
+            console.error('Error during fetch:', error);  // Логируем ошибку сети
             setError('An error occurred while submitting review.');
         }
     };
@@ -134,6 +135,22 @@ const MovieDetailPage = ({ user }) => {
                 </label>
                 <button type="submit">Submit Review</button>
             </form>
+
+            {/* Отображение всех отзывов */}
+            <h3>Reviews:</h3>
+            {reviews.length > 0 ? (
+                <ul>
+                    {reviews.map((rev) => (
+                        <li key={rev.id}>
+                            <p><strong>{rev.user.username}</strong> ({new Date(rev.createdAt).toLocaleDateString()})</p>
+                            <p>Rating: {rev.rating}</p>
+                            <p>{rev.comment}</p>
+                        </li>
+                    ))}
+                </ul>
+            ) : (
+                <p>No reviews yet.</p>
+            )}
 
             {message && <p>{message}</p>}
         </div>
